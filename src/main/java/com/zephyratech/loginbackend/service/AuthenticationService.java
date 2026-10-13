@@ -35,7 +35,7 @@ public class AuthenticationService {
 	}
 
 	public AuthResponse register(RegisterRequest request) {
-		if (userRepository.findByEmail(request.email()).isPresent()) {
+		if (userRepository.findByEmailIgnoreCase(request.email()).isPresent()) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
 		}
 
@@ -51,7 +51,7 @@ public class AuthenticationService {
 	}
 
 	public UserProfileResponse getProfile(String email) {
-		var user = userRepository.findByEmail(email)
+		var user = userRepository.findByEmailIgnoreCase(email)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 		return new UserProfileResponse(user.getId(), user.getEmail());
 	}

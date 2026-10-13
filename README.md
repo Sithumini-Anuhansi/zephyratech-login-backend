@@ -5,7 +5,7 @@ Spring Boot REST API for the Zephyra Tech login application. It provides user re
 ## Technology
 
 - Java 21
-- Spring Boot (the current `pom.xml` declares 4.1.1)
+- Spring Boot 4.1.1 (the selected target, as declared in `pom.xml`)
 - Spring Security and JWT (JJWT)
 - Spring Data JPA
 - PostgreSQL
@@ -92,6 +92,8 @@ Run the tests with:
 .\mvnw.cmd test
 ```
 
+The test suite uses an in-memory H2 database and does not require a local PostgreSQL server.
+
 ## Configuration
 
 Spring Boot environment variables can override the corresponding properties:
@@ -106,6 +108,7 @@ Spring Boot environment variables can override the corresponding properties:
 | `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` | Comma-separated allowed frontend origins |
 
 Keep production credentials and JWT signing keys in the hosting provider's secret/environment configuration. Do not commit them to source control. Use the PostgreSQL connection details supplied by the database host to create a `jdbc:postgresql://...` URL.
+The project intentionally targets Spring Boot 4.1.1; keep this aligned with the version in `pom.xml` when upgrading.
 
 If database credentials or a JWT key were included in an archive shared with anyone else, treat them as compromised: rotate the database credentials and replace the JWT key in the deployment environment. Git ignore rules do not exclude files when creating ZIP archives, so exclude local `application.properties`, `.env.local`, dependency folders, and build output before sharing one.
 
