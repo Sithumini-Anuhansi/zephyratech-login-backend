@@ -1,0 +1,126 @@
+# Zephyra Tech Login Backend
+
+Spring Boot REST API for the Zephyra Tech login application. It provides user registration, login, JWT-based authentication, and a protected current-user endpoint.
+
+## Technology
+
+- Java 21
+- Spring Boot (the current `pom.xml` declares 4.1.1)
+- Spring Security and JWT (JJWT)
+- Spring Data JPA
+- PostgreSQL
+- Maven Wrapper
+
+## API
+
+All request and response bodies use JSON.
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | Public | Register a user and return a JWT |
+| `POST` | `/api/auth/login` | Public | Authenticate and return a JWT |
+| `GET` | `/api/auth/me` | Bearer JWT | Return the authenticated user's ID and email |
+| `GET` | `/api/health` | Public | Return `{"status":"UP"}` |
+
+### Register
+
+Request:
+
+```json
+{
+  "email": "person@example.com",
+  "password": "your-password"
+}
+```
+
+Successful response (`201 Created`):
+
+```json
+{
+  "token": "<jwt>",
+  "email": "person@example.com"
+}
+```
+
+Email and password are required; the email must be valid. Registering an email that already exists returns `409 Conflict`.
+
+### Login
+
+Send the same `email` and `password` fields as registration. On success, the response contains a JWT and the email. Invalid credentials return `401 Unauthorized`.
+
+### Current user
+
+Pass the token returned by registration or login in the `Authorization` header:
+
+```http
+Authorization: Bearer <jwt>
+```
+
+Successful response:
+
+```json
+{
+  "id": 1,
+  "email": "person@example.com"
+}
+```
+
+The password hash is never included in this response. Missing or invalid authentication returns `401 Unauthorized`.
+
+## Run locally
+
+1. Install Java 21 and PostgreSQL.
+2. Create a PostgreSQL database (the default database name in `application.properties` is `zephyratech_db`).
+3. Configure the database credentials and JWT settings using environment variables or local application properties.
+4. From the repository root, run:
+
+   ```powershell
+   .\mvnw.cmd spring-boot:run
+   ```
+
+The application listens on port `8080` by default. The default CORS origin is `http://localhost:3000`.
+
+Run the tests with:
+
+```powershell
+.\mvnw.cmd test
+```
+
+## Configuration
+
+Spring Boot environment variables can override the corresponding properties:
+
+| Environment variable | Property | Purpose |
+| --- | --- | --- |
+| `SPRING_DATASOURCE_URL` | `spring.datasource.url` | PostgreSQL JDBC URL |
+| `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | Database password |
+| `JWT_SECRET` | `jwt.secret` | Hex-encoded JWT signing key; use a private, random key of at least 32 bytes |
+| `JWT_EXPIRATION` | `jwt.expiration` | Token lifetime in milliseconds; default is 86400000 (24 hours) |
+| `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` | Comma-separated allowed frontend origins |
+
+Keep production credentials and JWT signing keys in the hosting provider's secret/environment configuration. Do not commit them to source control. Use the PostgreSQL connection details supplied by the database host to create a `jdbc:postgresql://...` URL.
+
+## Render deployment notes
+
+This repository contains the backend only. To deploy it as a Render web service:
+
+1. Publish this repository to a public GitHub repository.
+2. Create a PostgreSQL database accessible to the Render web service.
+3. Create a Render Web Service connected to this repository and select Java/runtime support appropriate for Java 21.
+4. Use the Maven Wrapper to build:
+
+   ```sh
+   ./mvnw clean package
+   ```
+
+5. Start the packaged application on Render's assigned port:
+
+   ```sh
+   java -Dserver.port=${PORT:-8080} -jar target/login-backend-0.0.1-SNAPSHOT.jar
+   ```
+
+6. Set the PostgreSQL variables, `JWT_SECRET`, and `JWT_EXPIRATION` in the Render service environment. Set `CORS_ALLOWED_ORIGINS` to the exact deployed frontend origin, for example `https://your-frontend.vercel.app` (no path or trailing slash).
+7. After deployment, verify `GET https://<your-render-service>/api/health` returns `{"status":"UP"}` and test registration, login, and the protected current-user endpoint.
+
+The Render service is not deployed by this repository or README; deployment, database provisioning, and verification must be completed in the hosting accounts.
