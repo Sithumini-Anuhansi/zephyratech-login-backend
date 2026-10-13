@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		"spring.datasource.username=sa",
 		"spring.datasource.password=",
 		"spring.jpa.hibernate.ddl-auto=create-drop",
+		"spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
 		"spring.jpa.show-sql=false",
 		"JWT_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 })
@@ -58,7 +59,7 @@ class LoginBackendApplicationTests {
 	}
 
 	@Test
-	void registrationAndLoginNormalizeEmailAndIssueUsableToken() throws Exception {
+	void registrationAndLoginIssueTokensForProtectedProfile() throws Exception {
 		var registration = mockMvc().perform(post("/api/auth/register")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -66,22 +67,60 @@ class LoginBackendApplicationTests {
 						"""))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value("alice@example.com"))
+				.andExpect(jsonPath("$.token").isNotEmpty())
 				.andReturn();
 
-		String token = JsonPath.read(registration.getResponse().getContentAsString(), "$.token");
+		String registrationToken = JsonPath.read(
+				registration.getResponse().getContentAsString(), "$.token");
 
-		mockMvc().perform(post("/api/auth/login")
+		mockMvc().perform(get("/api/auth/me")
+				.header("Authorization", "Bearer " + registrationToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value("alice@example.com"))
+				.andExpect(jsonPath("$.id").isNumber())
+				.andExpect(jsonPath("$.password").doesNotExist());
+
+		var login = mockMvc().perform(post("/api/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"email":"  ALICE@example.com ","password":"Passw0rd!"}
 						"""))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value("alice@example.com"));
+				.andExpect(jsonPath("$.email").value("alice@example.com"))
+				.andExpect(jsonPath("$.token").isNotEmpty())
+				.andReturn();
 
+		String loginToken = JsonPath.read(login.getResponse().getContentAsString(), "$.token");
 		mockMvc().perform(get("/api/auth/me")
-				.header("Authorization", "Bearer " + token))
+				.header("Authorization", "Bearer " + loginToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value("alice@example.com"));
+				.andExpect(jsonPath("$.email").value("alice@example.com"))
+				.andExpect(jsonPath("$.password").doesNotExist());
+	}
+
+	@Test
+	void loginRejectsIncorrectPassword() throws Exception {
+		mockMvc().perform(post("/api/auth/register")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"alice@example.com","password":"Passw0rd!"}
+						"""))
+				.andExpect(status().isCreated());
+
+		mockMvc().perform(post("/api/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"alice@example.com","password":"WrongPass!"}
+						"""))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.message").value("Invalid email or password"));
+	}
+
+	@Test
+	void currentUserEndpointRejectsInvalidJwt() throws Exception {
+		mockMvc().perform(get("/api/auth/me")
+				.header("Authorization", "Bearer not-a-valid-jwt"))
+				.andExpect(status().isUnauthorized());
 	}
 
 	@Test
