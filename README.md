@@ -140,24 +140,21 @@ If database credentials or a JWT key were included in an archive shared with any
 
 ## Render deployment notes
 
-This repository contains the backend only. To deploy it as a Render web service:
+This repository contains the backend only. The included Dockerfile builds and runs the service with Java 21. To deploy it as a Render web service:
 
 1. Publish this repository to a public GitHub repository.
-2. Create a PostgreSQL database accessible to the Render web service.
-3. Create a Render Web Service connected to this repository and select Java/runtime support appropriate for Java 21.
-4. Use the Maven Wrapper to build:
+2. Create a Render PostgreSQL database. Choose a region and note the database's internal hostname, port, database name, username, and password.
+3. In Render, create a **Web Service** connected to this repository. Select **Docker** as the runtime and set the Dockerfile path to `./Dockerfile`. The service and database should use the same region.
+4. Set these environment variables on the web service:
 
-   ```sh
-   ./mvnw clean package
-   ```
+   - `SPRING_DATASOURCE_URL`: `jdbc:postgresql://<internal-hostname>:<port>/<database-name>`
+   - `SPRING_DATASOURCE_USERNAME`: the database username
+   - `SPRING_DATASOURCE_PASSWORD`: the database password
+   - `JWT_SECRET`: a newly generated, private, 32-byte-or-longer hex key
+   - `CORS_ALLOWED_ORIGINS`: the exact Vercel frontend origin, with no path or trailing slash
 
-5. Start the packaged application on Render's assigned port:
+   Keep these values in Render's environment settings; do not commit them. The Dockerfile reads the Render-assigned `PORT` through Spring Boot's `server.port` configuration.
+5. Deploy the web service and wait for its status to become **Live**. Render builds and tests the application from the Dockerfile.
+6. Verify `GET https://<your-render-service>/api/health` returns `{"status":"UP"}`.
 
-   ```sh
-   java -Dserver.port=${PORT:-8080} -jar target/login-backend-0.0.1-SNAPSHOT.jar
-   ```
-
-6. Set the PostgreSQL variables, `JWT_SECRET`, and `JWT_EXPIRATION` in the Render service environment. Set `CORS_ALLOWED_ORIGINS` to the exact deployed frontend origin, for example `https://your-frontend.vercel.app` (no path or trailing slash).
-7. After deployment, verify `GET https://<your-render-service>/api/health` returns `{"status":"UP"}` and test registration, login, and the protected current-user endpoint.
-
-The Render service is not deployed by this repository or README; deployment, database provisioning, and verification must be completed in the hosting accounts.
+Free Render web services can spin down when idle, causing cold starts. Free Render Postgres databases have a 1 GB storage limit and expire 30 days after creation; after a further 14-day grace period, Render deletes the database and its data. These limits make the free tier suitable for an assessment/demo, not production. Confirm the current limits in Render's documentation before creating resources.

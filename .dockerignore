@@ -1,0 +1,9 @@
+.git
+.vscode
+.mvn/wrapper/maven-wrapper.jar
+target
+build
+*.log
+.env*
+application.properties
+src/main/resources/application.properties
