@@ -3,6 +3,8 @@
 application.properties
 HELP.md
 target/
+node_modules/
+.env*
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

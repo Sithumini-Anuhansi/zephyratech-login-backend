@@ -70,15 +70,21 @@ The password hash is never included in this response. Missing or invalid authent
 ## Run locally
 
 1. Install Java 21 and PostgreSQL.
-2. Create a PostgreSQL database (the default database name in `application.properties` is `zephyratech_db`).
-3. Configure the database credentials and JWT settings using environment variables or local application properties.
+2. Create a PostgreSQL database and configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` in your local environment.
+3. Generate a new JWT signing key and configure it as `JWT_SECRET`. In PowerShell, generate a 32-byte random key encoded as hex with:
+
+   ```powershell
+   [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+   ```
+
+   Store the result in your local environment or deployment provider's secret configuration. Do not commit it or use a published key.
 4. From the repository root, run:
 
    ```powershell
    .\mvnw.cmd spring-boot:run
    ```
 
-The application listens on port `8080` by default. The default CORS origin is `http://localhost:3000`.
+The application listens on port `8080` by default. The default CORS origin is `http://localhost:3000`. The example configuration requires database environment variables and `JWT_SECRET`; none have credential or signing-key fallbacks.
 
 Run the tests with:
 
@@ -100,6 +106,8 @@ Spring Boot environment variables can override the corresponding properties:
 | `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` | Comma-separated allowed frontend origins |
 
 Keep production credentials and JWT signing keys in the hosting provider's secret/environment configuration. Do not commit them to source control. Use the PostgreSQL connection details supplied by the database host to create a `jdbc:postgresql://...` URL.
+
+If database credentials or a JWT key were included in an archive shared with anyone else, treat them as compromised: rotate the database credentials and replace the JWT key in the deployment environment. Git ignore rules do not exclude files when creating ZIP archives, so exclude local `application.properties`, `.env.local`, dependency folders, and build output before sharing one.
 
 ## Render deployment notes
 
