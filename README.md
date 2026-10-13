@@ -67,6 +67,32 @@ Successful response:
 
 The password hash is never included in this response. Missing or invalid authentication returns `401 Unauthorized`.
 
+## Screenshots
+
+The following Postman screenshots demonstrate the API requests and responses. Credentials and JWTs should be redacted in any screenshots shared publicly.
+
+### Health check
+
+![Backend health check: GET /api/health](./screenshots/health-check.png)
+
+### Registration
+
+![Backend registration request and response](./screenshots/register.png)
+
+### Login
+
+![Backend login response](./screenshots/login.png)
+
+### Save login token in Postman
+
+![Postman login request saving the token to the environment](./screenshots/login-save-token.png)
+
+### Protected profile
+
+![Backend protected profile request and response](./screenshots/protected-profile.png)
+
+Never include real passwords, unredacted JWTs, database credentials, signing keys, or personal account details in screenshots.
+
 ## Run locally
 
 1. Install Java 21 and PostgreSQL.
@@ -92,7 +118,7 @@ Run the tests with:
 .\mvnw.cmd test
 ```
 
-The test suite uses an in-memory H2 database and does not require a local PostgreSQL server.
+The test suite uses an in-memory H2 database and does not require a local PostgreSQL server. Authentication integration tests cover public health, registration and login token issuance, access to the protected profile with both issued tokens, email normalization, password/email validation, duplicate registration, invalid credentials and invalid or missing JWTs. The profile response is also checked to ensure it does not expose the password hash.
 
 ## Configuration
 
