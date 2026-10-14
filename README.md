@@ -1,30 +1,36 @@
-# Zephyra Tech Login Backend
+# Zephyra Tech Login — Backend
 
-Spring Boot REST API for the Zephyra Tech login application. It provides user registration, login, JWT-based authentication, and a protected current-user endpoint.
+This repository contains the REST API for Zephyra Tech Login. The Java and Spring Boot service handles account registration, password verification, JWT issuance and validation, protected profile access, and PostgreSQL persistence. The Next.js frontend is maintained in a separate repository.
 
-## Technology
+## Live application
 
-- Java 21
-- Spring Boot 4.1.1 (the selected target, as declared in `pom.xml`)
-- Spring Security and JWT (JJWT)
-- Spring Data JPA
-- PostgreSQL
-- Maven Wrapper
+- **Frontend:** [https://zephyratech-login-frontend.vercel.app](https://zephyratech-login-frontend.vercel.app)
+- **Frontend source:** [zephyratech-login-frontend](https://github.com/Sithumini-Anuhansi/zephyratech-login-frontend)
+- **Backend API:** [https://zephyratech-login-backend.onrender.com](https://zephyratech-login-backend.onrender.com)
+- **Backend source:** [zephyratech-login-backend](https://github.com/Sithumini-Anuhansi/zephyratech-login-backend)
+- **API health check:** [https://zephyratech-login-backend.onrender.com/api/health](https://zephyratech-login-backend.onrender.com/api/health)
+
+## Demo account
+
+The following disposable demo account is registered in the live application:
+
+- **Email:** `zephyra.demo@example.com`
+- **Password:** `Zephyra!Demo-Bluebird`
+
+This account is for demonstration only. Do not use it for personal or sensitive information, and do not reuse its password on another service.
 
 ## API
 
 All request and response bodies use JSON.
 
-| Method | Endpoint | Access | Purpose |
+| Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | Public | Register a user and return a JWT |
+| `POST` | `/api/auth/register` | Public | Register an account and return a JWT |
 | `POST` | `/api/auth/login` | Public | Authenticate and return a JWT |
-| `GET` | `/api/auth/me` | Bearer JWT | Return the authenticated user's ID and email |
+| `GET` | `/api/auth/me` | Bearer JWT required | Return the authenticated user's ID and email |
 | `GET` | `/api/health` | Public | Return `{"status":"UP"}` |
 
-### Register
-
-Request:
+Registration and login accept an email and password:
 
 ```json
 {
@@ -33,43 +39,11 @@ Request:
 }
 ```
 
-Successful response (`201 Created`):
-
-```json
-{
-  "token": "<jwt>",
-  "email": "person@example.com"
-}
-```
-
-Email and password are required; the email must be valid. Registering an email that already exists returns `409 Conflict`.
-
-### Login
-
-Send the same `email` and `password` fields as registration. On success, the response contains a JWT and the email. Invalid credentials return `401 Unauthorized`.
-
-### Current user
-
-Pass the token returned by registration or login in the `Authorization` header:
-
-```http
-Authorization: Bearer <jwt>
-```
-
-Successful response:
-
-```json
-{
-  "id": 1,
-  "email": "person@example.com"
-}
-```
-
-The password hash is never included in this response. Missing or invalid authentication returns `401 Unauthorized`.
+The registration endpoint validates and normalizes the email, enforces the password-length requirement, and rejects duplicate accounts. Passwords are stored as BCrypt hashes. Authentication endpoints return a JWT; the protected profile endpoint requires it in the `Authorization: Bearer <token>` header. The profile response does not include the password hash.
 
 ## Screenshots
 
-The following Postman screenshots demonstrate the API requests and responses. Credentials and JWTs should be redacted in any screenshots shared publicly.
+These Postman screenshots demonstrate the API responses. They use test data; credentials and JWTs should be redacted in any replacement screenshots.
 
 ### Health check
 
@@ -91,70 +65,19 @@ The following Postman screenshots demonstrate the API requests and responses. Cr
 
 ![Backend protected profile request and response](./screenshots/protected-profile.png)
 
-Never include real passwords, unredacted JWTs, database credentials, signing keys, or personal account details in screenshots.
+## Configuration and security
 
-## Run locally
+The deployed service uses environment-based configuration for its database connection, JWT signing key, and allowed frontend origins. The tracked example configuration does not contain credentials or a fallback signing key. Production secrets are configured in the hosting environment and are not included in this repository.
 
-1. Install Java 21 and PostgreSQL.
-2. Create a PostgreSQL database and configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` in your local environment.
-3. Generate a new random JWT signing key and configure it as `JWT_SECRET`. The backend accepts a key encoded as hex or standard/URL-safe Base64; in PowerShell, generate a 32-byte random key encoded as hex with:
+The Vercel frontend origin is allowed by the deployed service's CORS configuration. JWT signing keys and database credentials must remain private; do not include them in screenshots, archives, or source control.
 
-   ```powershell
-   [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-   ```
+## Technology
 
-   Store the result in your local environment or deployment provider's secret configuration. Do not commit it or use a published key.
-4. From the repository root, run:
+- Java 21
+- Spring Boot 4.1.1
+- Spring Security and JJWT
+- Spring Data JPA
+- PostgreSQL
+- Maven Wrapper
 
-   ```powershell
-   .\mvnw.cmd spring-boot:run
-   ```
-
-The application listens on port `8080` by default. The default CORS origin is `http://localhost:3000`. The example configuration requires database environment variables and `JWT_SECRET`; none have credential or signing-key fallbacks.
-
-Run the tests with:
-
-```powershell
-.\mvnw.cmd test
-```
-
-The test suite uses an in-memory H2 database and does not require a local PostgreSQL server. Authentication integration tests cover public health, registration and login token issuance, access to the protected profile with both issued tokens, email normalization, password/email validation, duplicate registration, invalid credentials and invalid or missing JWTs. The profile response is also checked to ensure it does not expose the password hash.
-
-## Configuration
-
-Spring Boot environment variables can override the corresponding properties:
-
-| Environment variable | Property | Purpose |
-| --- | --- | --- |
-| `SPRING_DATASOURCE_URL` | `spring.datasource.url` | PostgreSQL JDBC URL |
-| `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | Database username |
-| `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | Database password |
-| `JWT_SECRET` | `jwt.secret` | Hex- or standard/URL-safe Base64-encoded JWT signing key; use a private, random key of at least 32 bytes |
-| `JWT_EXPIRATION` | `jwt.expiration` | Token lifetime in milliseconds; default is 86400000 (24 hours) |
-| `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` | Comma-separated allowed frontend origins |
-
-Keep production credentials and JWT signing keys in the hosting provider's secret/environment configuration. Do not commit them to source control. Use the PostgreSQL connection details supplied by the database host to create a `jdbc:postgresql://...` URL.
-The project intentionally targets Spring Boot 4.1.1; keep this aligned with the version in `pom.xml` when upgrading.
-
-If database credentials or a JWT key were included in an archive shared with anyone else, treat them as compromised: rotate the database credentials and replace the JWT key in the deployment environment. Git ignore rules do not exclude files when creating ZIP archives, so exclude local `application.properties`, `.env.local`, dependency folders, and build output before sharing one.
-
-## Render deployment notes
-
-This repository contains the backend only. The included Dockerfile builds and runs the service with Java 21. To deploy it as a Render web service:
-
-1. Publish this repository to a public GitHub repository.
-2. Create a Render PostgreSQL database. Choose a region and note the database's internal hostname, port, database name, username, and password.
-3. In Render, create a **Web Service** connected to this repository. Select **Docker** as the runtime and set the Dockerfile path to `./Dockerfile`. The service and database should use the same region.
-4. Set these environment variables on the web service:
-
-   - `SPRING_DATASOURCE_URL`: `jdbc:postgresql://<internal-hostname>:<port>/<database-name>`
-   - `SPRING_DATASOURCE_USERNAME`: the database username
-   - `SPRING_DATASOURCE_PASSWORD`: the database password
-   - `JWT_SECRET`: a newly generated, private key containing at least 32 random bytes, encoded as hex or Base64
-   - `CORS_ALLOWED_ORIGINS`: the exact Vercel frontend origin, with no path or trailing slash
-
-   Keep these values in Render's environment settings; do not commit them. The Dockerfile reads the Render-assigned `PORT` through Spring Boot's `server.port` configuration.
-5. Deploy the web service and wait for its status to become **Live**. Render builds and tests the application from the Dockerfile.
-6. Verify `GET https://<your-render-service>/api/health` returns `{"status":"UP"}`.
-
-Free Render web services can spin down when idle, causing cold starts. Free Render Postgres databases have a 1 GB storage limit and expire 30 days after creation; after a further 14-day grace period, Render deletes the database and its data. These limits make the free tier suitable for an assessment/demo, not production. Confirm the current limits in Render's documentation before creating resources.
+The repository includes an H2-backed automated test suite for authentication and profile behavior.
