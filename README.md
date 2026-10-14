@@ -97,7 +97,7 @@ Never include real passwords, unredacted JWTs, database credentials, signing key
 
 1. Install Java 21 and PostgreSQL.
 2. Create a PostgreSQL database and configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` in your local environment.
-3. Generate a new JWT signing key and configure it as `JWT_SECRET`. In PowerShell, generate a 32-byte random key encoded as hex with:
+3. Generate a new random JWT signing key and configure it as `JWT_SECRET`. The backend accepts a key encoded as hex or standard/URL-safe Base64; in PowerShell, generate a 32-byte random key encoded as hex with:
 
    ```powershell
    [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
@@ -129,7 +129,7 @@ Spring Boot environment variables can override the corresponding properties:
 | `SPRING_DATASOURCE_URL` | `spring.datasource.url` | PostgreSQL JDBC URL |
 | `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | Database username |
 | `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | Database password |
-| `JWT_SECRET` | `jwt.secret` | Hex-encoded JWT signing key; use a private, random key of at least 32 bytes |
+| `JWT_SECRET` | `jwt.secret` | Hex- or standard/URL-safe Base64-encoded JWT signing key; use a private, random key of at least 32 bytes |
 | `JWT_EXPIRATION` | `jwt.expiration` | Token lifetime in milliseconds; default is 86400000 (24 hours) |
 | `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` | Comma-separated allowed frontend origins |
 
@@ -150,7 +150,7 @@ This repository contains the backend only. The included Dockerfile builds and ru
    - `SPRING_DATASOURCE_URL`: `jdbc:postgresql://<internal-hostname>:<port>/<database-name>`
    - `SPRING_DATASOURCE_USERNAME`: the database username
    - `SPRING_DATASOURCE_PASSWORD`: the database password
-   - `JWT_SECRET`: a newly generated, private, 32-byte-or-longer hex key
+   - `JWT_SECRET`: a newly generated, private key containing at least 32 random bytes, encoded as hex or Base64
    - `CORS_ALLOWED_ORIGINS`: the exact Vercel frontend origin, with no path or trailing slash
 
    Keep these values in Render's environment settings; do not commit them. The Dockerfile reads the Render-assigned `PORT` through Spring Boot's `server.port` configuration.

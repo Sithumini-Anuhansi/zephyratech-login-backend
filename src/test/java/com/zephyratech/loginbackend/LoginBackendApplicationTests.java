@@ -1,5 +1,8 @@
 package com.zephyratech.loginbackend;
 
+import java.util.Arrays;
+import java.util.Base64;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.jayway.jsonpath.JsonPath;
 import com.zephyratech.loginbackend.repository.UserRepository;
+import com.zephyratech.loginbackend.security.JwtTokenProvider;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,6 +48,29 @@ class LoginBackendApplicationTests {
 
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void jwtProviderAcceptsBase64EncodedSigningKey() {
+		String secret = Base64.getEncoder().withoutPadding()
+				.encodeToString("0123456789abcdef0123456789abcdef".getBytes());
+		assertBase64SecretWorks(secret);
+	}
+
+	@Test
+	void jwtProviderAcceptsUrlSafeBase64EncodedSigningKey() {
+		byte[] keyBytes = new byte[32];
+		Arrays.fill(keyBytes, (byte) 0xfb);
+		String secret = Base64.getUrlEncoder().withoutPadding().encodeToString(keyBytes);
+		assertBase64SecretWorks(secret);
+	}
+
+	private void assertBase64SecretWorks(String secret) {
+		var tokenProvider = new JwtTokenProvider(secret, 86400000);
+		String token = tokenProvider.generateToken("alice@example.com");
+
+		org.junit.jupiter.api.Assertions.assertTrue(tokenProvider.validateToken(token));
+		org.junit.jupiter.api.Assertions.assertEquals("alice@example.com", tokenProvider.extractEmail(token));
 	}
 
 	@Test
