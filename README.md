@@ -65,6 +65,22 @@ These Postman screenshots demonstrate the API responses. They use test data; cre
 
 ![Backend protected profile request and response](./screenshots/protected-profile.png)
 
+## Deployment evidence
+
+These screenshots show the live Render web service, the associated PostgreSQL database, and the public health endpoint response.
+
+### Render web service
+
+![Render backend web service showing its live deployment](./screenshots/render-backend-deployment.png)
+
+### Render PostgreSQL database
+
+![Render PostgreSQL database service and availability status](./screenshots/render-postgres-database.png)
+
+### Public API health check
+
+![Live backend API health endpoint returning UP](./screenshots/backend-api-health.png)
+
 ## Configuration and security
 
 The deployed service uses environment-based configuration for its database connection, JWT signing key, and allowed frontend origins. The tracked example configuration does not contain credentials or a fallback signing key. Production secrets are configured in the hosting environment and are not included in this repository.
