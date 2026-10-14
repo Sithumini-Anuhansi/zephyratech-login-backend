@@ -26,7 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		"spring.jpa.hibernate.ddl-auto=create-drop",
 		"spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
 		"spring.jpa.show-sql=false",
-		"JWT_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+		"jwt.secret=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		"jwt.expiration=86400000"
 })
 class LoginBackendApplicationTests {
 

@@ -6,6 +6,7 @@ COPY pom.xml .
 RUN mvn -B dependency:go-offline
 
 COPY src ./src
+RUN cp src/main/resources/application.properties.example src/main/resources/application.properties
 RUN mvn -B package
 
 FROM eclipse-temurin:21-jre
